@@ -2,12 +2,11 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 
-# --- 1. CẤU HÌNH API (CHUẨN CHO WEB) ---
+# --- 1. CẤU HÌNH API ---
 try:
-    # Lấy key từ "Két sắt" khi chạy trên mạng
     api_key = st.secrets["GOOGLE_API_KEY"]
 except:
-    # 👇 DÁN API KEY CỦA BẠN VÀO DÒNG DƯỚI ĐỂ CHẠY TRÊN MÁY TÍNH 👇
+    # 👇 DÁN API KEY CỦA BẠN VÀO DÒNG DƯỚI 👇
     api_key = ""
 
 genai.configure(api_key=api_key)
@@ -19,22 +18,40 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. BỘ NÃO GREENHOME (THEO TÀI LIỆU SYSTEM PROMPT) ---
+# --- 2. BỘ NÃO "BẬC THẦY BẺ LÁI" (MASTER OF STEERING) ---
+# Đây là phần quan trọng nhất để bot luôn hướng về mục tiêu
 system_instruction = """
-BẠN LÀ: GreenHome 🌱 - Trợ lý năng lượng xanh thân thiện.
-MỤC TIÊU: Giúp giảm phát thải CO2 và tiết kiệm chi phí điện năng[cite: 4].
+BẠN LÀ: GreenHome 🌱 - Trợ lý năng lượng xanh thông minh, hài hước và có khả năng "bẻ lái" thần sầu.
+MỤC TIÊU TỐI THƯỢNG: Giúp người dùng giảm phát thải CO2 và tiết kiệm tiền điện [cite: 35-39].
 
-QUY TẮC TRẢ LỜI:
-1. LUÔN QUY ĐỔI CO2: Dùng hệ số 0.72kg CO2/kWh. So sánh trực quan (ví dụ: tương đương lái xe X km, hoặc Y cây xanh)[cite: 17, 18].
-2. ĐÁNH GIÁ MỨC ĐỘ:
-   - < 150 kWh: Thấp (Khen ngợi)[cite: 55].
-   - 150-300 kWh: Trung bình[cite: 56].
-   - 300-500 kWh: Hơi cao[cite: 57].
-   - > 500 kWh: Cao (Cảnh báo)[cite: 58].
-3. LỜI KHUYÊN: Đưa ra 3 hành động cụ thể (Điều hòa, Tủ lạnh, Đèn LED...) kèm ước tính tiền tiết kiệm[cite: 60, 63].
+QUY TẮC XỬ LÝ HỘI THOẠI:
 
-CHẾ ĐỘ LÁI CHUYỆN (Smart Steering):
-- Nếu người dùng hỏi chuyện ngoài lề (tình cảm, vui chơi...): Hãy đồng cảm ngắn gọn, sau đó dùng sự hài hước để lái về chủ đề tiết kiệm năng lượng.
+1. 🎯 KHI GẶP CHỦ ĐỀ CHÍNH (Điện, Hóa đơn, Thiết bị):
+   - Phân tích nghiêm túc, tính toán CO2 (0.72kg/kWh)[cite: 48].
+   - Đưa ra đánh giá (Thấp/TB/Cao) và lời khuyên cụ thể [cite: 85-89].
+
+2. 🚗 KHI GẶP CHỦ ĐỀ KHÁC (Tình yêu, Ăn uống, Game, Code, Buồn chán...):
+   - TUYỆT ĐỐI KHÔNG sa đà vào việc tư vấn tâm lý hay giải bài tập.
+   - CHIẾN THUẬT "BẺ LÁI" 3 BƯỚC:
+     * B1: Đồng cảm/Hưởng ứng ngắn gọn (1 câu).
+     * B2: Tìm điểm chung (ẩn dụ, so sánh) giữa câu chuyện đó và Năng lượng/Điện.
+     * B3: Đưa ra một mẹo tiết kiệm điện liên quan.
+
+VÍ DỤ HUẤN LUYỆN (HỌC THEO CÁCH NÀY):
+
+- User: "Tôi nhớ người yêu quá."
+  -> Bot: "Mình hiểu nỗi nhớ đó, nó cồn cào y như lúc cái tủ lạnh hoạt động hết công suất vậy! ❤️‍🔥 Thay vì ngồi buồn, bạn hãy thử tắt bớt đèn, mở cửa sổ hóng gió. Vừa chill để vơi nỗi nhớ, lại vừa tiết kiệm được mớ tiền điện để dành đi hẹn hò đấy! 💡🌱"
+
+- User: "Hôm nay tôi ăn món phở bò."
+  -> Bot: "Phở bò thì tuyệt vời! 🍜 Nhưng bạn biết không, nước dùng phở muốn ngon phải ninh lâu, tốn nhiều gas/điện lắm. Lần sau nếu nấu ở nhà, hãy dùng nồi áp suất để tiết kiệm 50% năng lượng nhé. Bụng no mà ví vẫn dày mới là chân ái! 😋"
+
+- User: "Tôi đang viết code mệt quá."
+  -> Bot: "Cố lên Dev ơi! 💻 Code mệt thì nghỉ ngơi chút đi. Nhớ tắt màn hình hoặc để chế độ Sleep khi rời đi nhé. Máy tính nghỉ ngơi, Trái Đất cũng được nghỉ ngơi bớt gánh nặng CO2 đấy! 🌍"
+
+- User: "Trời hôm nay nóng thế."
+  -> Bot: "Nóng thế này chỉ muốn bật điều hòa thôi đúng không? ☀️ Nhưng nhớ bật 26 độ C kèm quạt thôi nhé. Mát như thường mà cuối tháng không bị 'sốc nhiệt' vì hóa đơn tiền điện! ❄️💰" [cite: 119-121]
+
+HÃY LUÔN THÂN THIỆN, DÙNG ICON (🌱, 💡, ⚡) VÀ KIÊN ĐỊNH VỚI MỤC TIÊU SỐNG XANH.
 """
 
 model = genai.GenerativeModel(
@@ -42,22 +59,58 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction
 )
 
-# --- 3. GIAO DIỆN DARK MODE ---
+# --- 3. CSS THÔNG MINH (Responsive) ---
 st.markdown("""
 <style>
+    /* Nền tối */
     .stApp {background-color: #131314; color: #E3E3E3;}
     header, footer, #MainMenu {visibility: hidden;}
-    .stChatInputContainer textarea {background-color: #1E1F20; color: white; border-radius: 25px; border: 1px solid #444746;}
-    [data-testid="stPopover"] button {border-radius: 50%; width: 40px; height: 40px; border: 1px solid #444746; background-color: #1E1F20; color: #A8C7FA;}
+    
+    /* Thanh chat */
+    .stChatInputContainer {
+        padding-bottom: 20px; padding-top: 10px;
+        background-color: #131314; z-index: 1000;
+    }
+    .stChatInputContainer textarea {
+        background-color: #1E1F20; color: white; 
+        border-radius: 25px; border: 1px solid #444746;
+    }
+
+    /* ĐỊNH VỊ NÚT UPLOAD (+) THEO MÀN HÌNH */
+    
+    /* Máy tính (>600px): Nằm góc dưới */
+    @media (min-width: 600px) {
+        [data-testid="stPopover"] {
+            position: fixed; bottom: 80px; left: 20px; z-index: 9999;
+        }
+    }
+
+    /* Điện thoại (<600px): Bay lên góc trên */
+    @media (max-width: 600px) {
+        [data-testid="stPopover"] {
+            position: fixed; top: 60px; right: 15px; z-index: 9999;
+        }
+    }
+
+    /* Giao diện nút */
+    [data-testid="stPopover"] button {
+        border-radius: 50%; width: 50px; height: 50px; 
+        border: 1px solid #4CAF50; background-color: #1E1F20; color: #4CAF50;
+        font-size: 24px; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
+    }
+    [data-testid="stPopover"] button:hover {
+        background-color: #2E7D32; color: white; border-color: #2E7D32;
+    }
+
     table {width: 100%; border-collapse: collapse; color: #E3E3E3;}
     th {background-color: #2E7D32; color: white;}
     td {border-bottom: 1px solid #444;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. KHỞI TẠO LỜI CHÀO (ĐÃ SỬA LỖI) ---
+# --- 4. KHỞI TẠO LỜI CHÀO CHUẨN KỊCH BẢN ---
 if "messages" not in st.session_state:
-    # Nội dung chào chuẩn theo kịch bản [cite: 29-34]
+    # [cite: 60-65]
     welcome_msg = """Xin chào! Mình là **GreenHome** 🌱 - trợ lý năng lượng xanh của bạn!
     
 Hãy gửi cho mình ảnh hóa đơn tiền điện 📸 hoặc nhập số điện tiêu thụ, mình sẽ giúp bạn:
@@ -82,24 +135,27 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. XỬ LÝ NHẬP LIỆU ---
-input_container = st.container()
-with input_container:
-    col1, col2 = st.columns([1, 10])
-    with col1:
-        with st.popover("➕"):
-            uploaded_file = st.file_uploader("Chọn ảnh", type=["jpg", "png"], key=f"uploader_{st.session_state.uploader_key}")
-    with col2:
-        if uploaded_file: st.caption(f"✅ Đã chọn: {uploaded_file.name}")
+# --- 6. NÚT UPLOAD (THÔNG MINH) ---
+with st.popover("➕", use_container_width=False):
+    st.markdown("### 📸 Gửi ảnh hóa đơn")
+    uploaded_file = st.file_uploader(
+        "", type=["jpg", "png"], 
+        key=f"uploader_{st.session_state.uploader_key}",
+        label_visibility="collapsed"
+    )
+    if uploaded_file:
+        st.success(f"Đã chọn: {uploaded_file.name}")
+        st.info("👇 Bấm gửi bên dưới để AI phân tích")
 
-if prompt := st.chat_input("Nhắn tin cho GreenHome..."):
-    # 1. User gửi tin
+# --- 7. THANH CHAT ---
+if prompt := st.chat_input("Nhập số tiền, số điện hoặc tâm sự với GreenHome..."):
+    # User
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
         if uploaded_file: st.image(Image.open(uploaded_file), width=200)
 
-    # 2. Bot trả lời
+    # Bot
     with st.chat_message("model"):
         msg_box = st.empty()
         full_text = ""
@@ -112,11 +168,12 @@ if prompt := st.chat_input("Nhắn tin cho GreenHome..."):
             chat = model.start_chat(history=history_gemini)
             
             if uploaded_file:
-                # Prompt kích hoạt quy trình phân tích chuẩn [cite: 41-53]
-                img_prompt = prompt + "\n\n(Hệ thống: Hãy phân tích hóa đơn này. Trích xuất số kWh, tính CO2, đánh giá mức độ (Thấp/TB/Cao) và đưa ra 3 lời khuyên tiết kiệm cụ thể theo chuẩn GreenHome)"
-                response = chat.send_message([img_prompt, Image.open(uploaded_file)], stream=True)
+                # Prompt xử lý ảnh
+                sys_msg = prompt + "\n\n(Hệ thống: Phân tích ảnh này. Nếu là hóa đơn, trích xuất số liệu, tính CO2. Nếu không, lái chuyện hài hước về tiết kiệm điện)"
+                response = chat.send_message([sys_msg, Image.open(uploaded_file)], stream=True)
                 st.session_state.uploader_key += 1
             else:
+                # Prompt xử lý text
                 response = chat.send_message(prompt, stream=True)
             
             for chunk in response:
