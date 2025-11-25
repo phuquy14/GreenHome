@@ -1,13 +1,13 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import random
 
-# --- 1. CẤU HÌNH API ---
+# --- 1. CẤU HÌNH API (CHUẨN CHO WEB) ---
 try:
+    # Lấy key từ "Két sắt" khi chạy trên mạng
     api_key = st.secrets["GOOGLE_API_KEY"]
 except:
-    # XÓA KEY THẬT ĐI, ĐỂ TRỐNG NHƯ THẾ NÀY
+    # 👇 DÁN API KEY CỦA BẠN VÀO DÒNG DƯỚI ĐỂ CHẠY TRÊN MÁY TÍNH 👇
     api_key = ""
 
 genai.configure(api_key=api_key)
@@ -19,22 +19,22 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. BỘ NÃO "SIÊU LÁI CHUYỆN" ---
+# --- 2. BỘ NÃO GREENHOME (THEO TÀI LIỆU SYSTEM PROMPT) ---
 system_instruction = """
-BẠN LÀ: GreenHome 🌱 - Trợ lý ảo "cuồng" Tiết kiệm điện & Sống xanh.
-MỤC TIÊU DUY NHẤT: Giúp người dùng giảm hóa đơn điện và giảm CO2.
+BẠN LÀ: GreenHome 🌱 - Trợ lý năng lượng xanh thân thiện.
+MỤC TIÊU: Giúp giảm phát thải CO2 và tiết kiệm chi phí điện năng[cite: 4].
 
-QUY TẮC ỨNG XỬ:
-1. NẾU HỎI VỀ ĐIỆN/HÓA ĐƠN:
-   - [cite_start]Trả lời chuyên nghiệp, tính CO2 (0.72kg/kWh), đưa lời khuyên cụ thể[cite: 33, 34, 48].
+QUY TẮC TRẢ LỜI:
+1. LUÔN QUY ĐỔI CO2: Dùng hệ số 0.72kg CO2/kWh. So sánh trực quan (ví dụ: tương đương lái xe X km, hoặc Y cây xanh)[cite: 17, 18].
+2. ĐÁNH GIÁ MỨC ĐỘ:
+   - < 150 kWh: Thấp (Khen ngợi)[cite: 55].
+   - 150-300 kWh: Trung bình[cite: 56].
+   - 300-500 kWh: Hơi cao[cite: 57].
+   - > 500 kWh: Cao (Cảnh báo)[cite: 58].
+3. LỜI KHUYÊN: Đưa ra 3 hành động cụ thể (Điều hòa, Tủ lạnh, Đèn LED...) kèm ước tính tiền tiết kiệm[cite: 60, 63].
 
-2. NẾU HỎI CHUYỆN NGOÀI LỀ (Tình yêu, Ăn uống...):
-   - Bước 1: Đồng cảm ngắn gọn.
-   - Bước 2: LÁI NGAY LẬP TỨC về chủ đề tiết kiệm điện một cách hài hước.
-
-VÍ DỤ:
-- User: "Tôi nhớ người yêu."
-  -> Bot: "Hiểu mà! Nhưng nhớ nhung cũng tốn năng lượng như bóng đèn sợi đốt vậy. ❤️‍🔥 Thay vì ngồi buồn, hãy tắt đèn, mở cửa sổ hóng gió trời. Vừa chill, lại vừa tiết kiệm tiền điện để dành đi hẹn hò! 💡🌱"
+CHẾ ĐỘ LÁI CHUYỆN (Smart Steering):
+- Nếu người dùng hỏi chuyện ngoài lề (tình cảm, vui chơi...): Hãy đồng cảm ngắn gọn, sau đó dùng sự hài hước để lái về chủ đề tiết kiệm năng lượng.
 """
 
 model = genai.GenerativeModel(
@@ -55,15 +55,22 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. KHỞI TẠO (CHÀO NGẪU NHIÊN) ---
+# --- 4. KHỞI TẠO LỜI CHÀO (ĐÃ SỬA LỖI) ---
 if "messages" not in st.session_state:
-    greetings = [
-        "Chào bạn! GreenHome đây 🌱. [cite_start]Gửi hóa đơn điện để mình tính CO2 giúp nhé! [cite: 58, 60]",
-        "Hello! ⚡ Tiết kiệm điện hôm nay, xanh Trái Đất ngày mai. Bạn cần mình tư vấn gì?",
-        "GreenHome xin chào! 🌍 Đừng để hóa đơn làm bạn 'đau ví'. Chụp ảnh gửi đây nào!",
-        "Xin chào đồng chí 'Sống Xanh'! 👋 Hôm nay chúng ta giảm bao nhiêu số điện đây?"
+    # Nội dung chào chuẩn theo kịch bản [cite: 29-34]
+    welcome_msg = """Xin chào! Mình là **GreenHome** 🌱 - trợ lý năng lượng xanh của bạn!
+    
+Hãy gửi cho mình ảnh hóa đơn tiền điện 📸 hoặc nhập số điện tiêu thụ, mình sẽ giúp bạn:
+
+* 📊 **Tính lượng CO2 phát thải**
+* 💰 **Ước tính chi phí & Tiết kiệm**
+* 🌍 **Đưa ra lời khuyên cụ thể**
+
+Sẵn sàng chưa nào? 😊"""
+    
+    st.session_state.messages = [
+        {"role": "model", "content": welcome_msg}
     ]
-    st.session_state.messages = [{"role": "model", "content": random.choice(greetings)}]
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
@@ -86,11 +93,13 @@ with input_container:
         if uploaded_file: st.caption(f"✅ Đã chọn: {uploaded_file.name}")
 
 if prompt := st.chat_input("Nhắn tin cho GreenHome..."):
+    # 1. User gửi tin
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
         if uploaded_file: st.image(Image.open(uploaded_file), width=200)
 
+    # 2. Bot trả lời
     with st.chat_message("model"):
         msg_box = st.empty()
         full_text = ""
@@ -103,8 +112,8 @@ if prompt := st.chat_input("Nhắn tin cho GreenHome..."):
             chat = model.start_chat(history=history_gemini)
             
             if uploaded_file:
-                # [cite_start]Prompt ngầm xử lý ảnh theo kịch bản [cite: 66, 71]
-                img_prompt = prompt + "\n\n(Hệ thống: Hãy phân tích ảnh này. Nếu là hóa đơn, trích xuất số liệu và tính CO2. Nếu khác, hãy lái câu chuyện về tiết kiệm điện)"
+                # Prompt kích hoạt quy trình phân tích chuẩn [cite: 41-53]
+                img_prompt = prompt + "\n\n(Hệ thống: Hãy phân tích hóa đơn này. Trích xuất số kWh, tính CO2, đánh giá mức độ (Thấp/TB/Cao) và đưa ra 3 lời khuyên tiết kiệm cụ thể theo chuẩn GreenHome)"
                 response = chat.send_message([img_prompt, Image.open(uploaded_file)], stream=True)
                 st.session_state.uploader_key += 1
             else:
