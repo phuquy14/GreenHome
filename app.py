@@ -12,7 +12,7 @@ except:
 genai.configure(api_key=api_key)
 
 st.set_page_config(
-    page_title="GreenHome Expert",
+    page_title="GreenHome",
     page_icon="🌱",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -131,16 +131,16 @@ if "messages" not in st.session_state:
 
 💡 **Hướng dẫn người mới:**
 1. Để gửi hóa đơn: Hãy bấm vào **dấu cộng (+)** ở góc màn hình và chọn ảnh.
-2. Để tính nhanh: Nhập số tiền (VD: *500k*) vào ô chat bên dưới.
+2. Để tính nhanh: Nhập số tiền (VD: *500k*), số điện (VD: *200kWh*) vào ô chat bên dưới.
 
-Sau khi mình trả lời, bạn có thể hỏi thêm (VD: *"Tư vấn cụ thể hơn"*) để mình hướng dẫn chi tiết nhé!"""
+"""
     st.session_state.messages = [{"role": "model", "content": welcome_msg}]
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
 # --- 6. GIAO DIỆN CHÍNH ---
-st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome Expert</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome</h3>", unsafe_allow_html=True)
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
