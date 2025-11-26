@@ -19,7 +19,7 @@ st.set_page_config(
     page_title="GreenHome Expert",
     page_icon="🌱",
     layout="centered",
-    initial_sidebar_state="expanded" # LỆNH ÉP MỞ SIDEBAR
+    initial_sidebar_state="expanded" 
 )
 
 # --- 2. HỆ THỐNG DỮ LIỆU ---
@@ -42,7 +42,7 @@ def save_all_sessions(username, sessions_data):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(sessions_data, f, ensure_ascii=False, indent=4)
 
-# --- 3. HÀM TẠO "TRÍ NHỚ DÀI HẠN" ---
+# --- 3. BỘ NHỚ DÀI HẠN ---
 def get_long_term_memory(username, sessions):
     memory_text = ""
     recent_session_ids = list(sessions.keys())[-3:] 
@@ -69,24 +69,28 @@ def get_model(memory_context=""):
     """
     return genai.GenerativeModel(model_name="gemini-2.0-flash", system_instruction=base_instruction + memory_context)
 
-# --- 5. CSS GIAO DIỆN ---
+# --- 5. CSS GIAO DIỆN (ĐÃ SỬA LỖI MẤT NÚT MỞ MENU) ---
 st.markdown("""
 <style>
     .stApp {background-color: #131314; color: #E3E3E3;}
-    header, footer, #MainMenu {visibility: hidden;}
+    
+    /* CHỈ ẨN FOOTER VÀ MENU 3 CHẤM, KHÔNG ẨN HEADER ĐỂ CÒN THẤY NÚT MỞ SIDEBAR */
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    
     .stChatInputContainer textarea {background-color: #1E1F20; color: white; border-radius: 25px; border: 1px solid #444746;}
     
-    /* Sidebar luôn hiện rõ */
+    /* Sidebar */
     [data-testid="stSidebar"] {background-color: #171719; border-right: 1px solid #333;}
     
-    /* Nút chọn lịch sử */
+    /* Nút lịch sử */
     .stButton button {
         width: 100%; text-align: left; border: 1px solid #333;
         background-color: #1E1F20; color: #E3E3E3; margin-bottom: 5px; border-radius: 8px;
     }
     .stButton button:hover {background-color: #2E2E2E; border-color: #4CAF50;}
     
-    /* Nút New Chat xanh lá */
+    /* Nút New Chat */
     div[data-testid="stSidebarUserContent"] .stButton:first-child button {
         background-color: #2E7D32; color: white; border: none; text-align: center; font-weight: bold;
     }
@@ -110,12 +114,11 @@ if "user_sessions" not in st.session_state: st.session_state.user_sessions = {}
 if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
 if "gemini_model" not in st.session_state: st.session_state.gemini_model = None 
 
-# --- 7. HÀM TẠO MỚI (ĐÃ SỬA LỜI CHÀO CHUẨN) ---
+# --- 7. HÀM TẠO MỚI ---
 def create_new_session():
     new_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # [cite_start]LỜI CHÀO CHUẨN ĐẸP [cite: 58-65]
     welcome_content = """👋 Chào bạn! Mình là **GreenHome** 🌱.
 
 Hãy gửi **Ảnh hóa đơn** 📸 hoặc **Số tiền điện**, mình sẽ giúp bạn:
@@ -131,7 +134,6 @@ Hãy gửi **Ảnh hóa đơn** 📸 hoặc **Số tiền điện**, mình sẽ 
     st.session_state.active_session_id = new_id
     save_all_sessions(st.session_state.current_user, st.session_state.user_sessions)
     
-    # Nạp ký ức
     memory_context = get_long_term_memory(st.session_state.current_user, st.session_state.user_sessions)
     st.session_state.gemini_model = get_model(memory_context)
 
@@ -139,7 +141,6 @@ def handle_response(user_input, image=None):
     session_id = st.session_state.active_session_id
     current_chat = st.session_state.user_sessions[session_id]
     
-    # Tự đặt tiêu đề
     if len(current_chat["messages"]) <= 1:
         current_chat["title"] = (user_input[:25] + "...") if len(user_input) > 25 else user_input
 
@@ -192,20 +193,14 @@ if st.session_state.current_user is None:
                 st.rerun()
 else:
     # MAIN APP
-    
-    # --- THANH BÊN (SIDEBAR) CHỨA LỊCH SỬ ---
     with st.sidebar:
         st.write(f"👤 **{st.session_state.current_user}**")
-        
-        # Nút tạo mới (Xanh lá)
         if st.button("➕ Cuộc trò chuyện mới"):
             create_new_session()
             st.rerun()
         
         st.caption("Gần đây")
         session_ids = list(st.session_state.user_sessions.keys())[::-1]
-        
-        # Danh sách lịch sử
         for sess_id in session_ids:
             sess_data = st.session_state.user_sessions[sess_id]
             title = sess_data.get("title", "No title")
@@ -220,17 +215,14 @@ else:
             st.session_state.current_user = None
             st.rerun()
 
-    # HEADER
     st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome Expert</h3>", unsafe_allow_html=True)
     
-    # CHAT AREA
     if st.session_state.active_session_id:
         current_messages = st.session_state.user_sessions[st.session_state.active_session_id]["messages"]
         for message in current_messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-    # INPUT
     with st.popover("➕", use_container_width=False):
         uploaded_file = st.file_uploader("", type=["jpg", "png"], key=f"uploader_{st.session_state.uploader_key}", label_visibility="collapsed")
         if uploaded_file:
