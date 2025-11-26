@@ -16,7 +16,7 @@ except:
 genai.configure(api_key=api_key)
 
 st.set_page_config(
-    page_title="GreenHome Expert",
+    page_title="GreenHome",
     page_icon="🌱",
     layout="centered",
     initial_sidebar_state="expanded" 
