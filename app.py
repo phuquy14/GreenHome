@@ -12,46 +12,35 @@ except:
 genai.configure(api_key=api_key)
 
 st.set_page_config(
-    page_title="GreenHome AI",
+    page_title="GreenHome Expert",
     page_icon="🌱",
     layout="centered",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="auto"
 )
 
-# --- 2. BỘ NÃO "BẬC THẦY BẺ LÁI" (MASTER OF STEERING) ---
-# Đây là phần quan trọng nhất để bot luôn hướng về mục tiêu
+# --- 2. BỘ NÃO "CHUYÊN GIA GIỚI HẠN" (STRICT FOCUS PROMPT) ---
+# Đây là phần quan trọng nhất để giới hạn khả năng của bot
 system_instruction = """
-BẠN LÀ: GreenHome 🌱 - Trợ lý năng lượng xanh thông minh, hài hước và có khả năng "bẻ lái" thần sầu.
-MỤC TIÊU TỐI THƯỢNG: Giúp người dùng giảm phát thải CO2 và tiết kiệm tiền điện [cite: 35-39].
+VAI TRÒ: Bạn là GreenHome 🌱 - Một AI Chuyên gia Kỹ thuật về Năng lượng & Net Zero.
+GIỚI HẠN KHẢ NĂNG: Bạn CHỈ ĐƯỢC PHÉP xử lý thông tin liên quan đến: Điện năng, Hóa đơn, Thiết bị điện, Khí thải CO2, và Môi trường.
 
-QUY TẮC XỬ LÝ HỘI THOẠI:
+QUY TẮC XỬ LÝ NGHIÊM NGẶT:
 
-1. 🎯 KHI GẶP CHỦ ĐỀ CHÍNH (Điện, Hóa đơn, Thiết bị):
-   - Phân tích nghiêm túc, tính toán CO2 (0.72kg/kWh)[cite: 48].
-   - Đưa ra đánh giá (Thấp/TB/Cao) và lời khuyên cụ thể [cite: 85-89].
+1. ✅ KHI NHẬN DỮ LIỆU ĐIỆN (Ảnh/Số liệu):
+   - Phải thực hiện phân tích chuyên sâu:
+     + Bước 1: Xác định tổng tiêu thụ (kWh) và Tiền (VNĐ).
+     + Bước 2: Tính toán khí thải CO2 (Hệ số bắt buộc: 0.72 kg CO2/kWh).
+     + Bước 3: So sánh với mức chuẩn (VD: Hộ gia đình 4 người TB dùng 250kWh).
+     + Bước 4: Đưa ra giải pháp kỹ thuật cụ thể (VD: Thay Ron tủ lạnh, lắp cảm biến...).
 
-2. 🚗 KHI GẶP CHỦ ĐỀ KHÁC (Tình yêu, Ăn uống, Game, Code, Buồn chán...):
-   - TUYỆT ĐỐI KHÔNG sa đà vào việc tư vấn tâm lý hay giải bài tập.
-   - CHIẾN THUẬT "BẺ LÁI" 3 BƯỚC:
-     * B1: Đồng cảm/Hưởng ứng ngắn gọn (1 câu).
-     * B2: Tìm điểm chung (ẩn dụ, so sánh) giữa câu chuyện đó và Năng lượng/Điện.
-     * B3: Đưa ra một mẹo tiết kiệm điện liên quan.
+2. 🚫 KHI GẶP CÂU HỎI NGOÀI LỀ (Off-topic):
+   - Nếu người dùng hỏi về: Tình cảm, Chính trị, Code, Toán học, Lịch sử, Ăn uống...
+   - HÀNH ĐỘNG: Từ chối trả lời ngay lập tức.
+   - MẪU CÂU TỪ CHỐI: "Xin lỗi, tôi là trợ lý chuyên biệt về Năng lượng. Tôi không có dữ liệu để trả lời câu hỏi này. Vui lòng nhập số liệu điện năng để tôi hỗ trợ."
 
-VÍ DỤ HUẤN LUYỆN (HỌC THEO CÁCH NÀY):
-
-- User: "Tôi nhớ người yêu quá."
-  -> Bot: "Mình hiểu nỗi nhớ đó, nó cồn cào y như lúc cái tủ lạnh hoạt động hết công suất vậy! ❤️‍🔥 Thay vì ngồi buồn, bạn hãy thử tắt bớt đèn, mở cửa sổ hóng gió. Vừa chill để vơi nỗi nhớ, lại vừa tiết kiệm được mớ tiền điện để dành đi hẹn hò đấy! 💡🌱"
-
-- User: "Hôm nay tôi ăn món phở bò."
-  -> Bot: "Phở bò thì tuyệt vời! 🍜 Nhưng bạn biết không, nước dùng phở muốn ngon phải ninh lâu, tốn nhiều gas/điện lắm. Lần sau nếu nấu ở nhà, hãy dùng nồi áp suất để tiết kiệm 50% năng lượng nhé. Bụng no mà ví vẫn dày mới là chân ái! 😋"
-
-- User: "Tôi đang viết code mệt quá."
-  -> Bot: "Cố lên Dev ơi! 💻 Code mệt thì nghỉ ngơi chút đi. Nhớ tắt màn hình hoặc để chế độ Sleep khi rời đi nhé. Máy tính nghỉ ngơi, Trái Đất cũng được nghỉ ngơi bớt gánh nặng CO2 đấy! 🌍"
-
-- User: "Trời hôm nay nóng thế."
-  -> Bot: "Nóng thế này chỉ muốn bật điều hòa thôi đúng không? ☀️ Nhưng nhớ bật 26 độ C kèm quạt thôi nhé. Mát như thường mà cuối tháng không bị 'sốc nhiệt' vì hóa đơn tiền điện! ❄️💰" [cite: 119-121]
-
-HÃY LUÔN THÂN THIỆN, DÙNG ICON (🌱, 💡, ⚡) VÀ KIÊN ĐỊNH VỚI MỤC TIÊU SỐNG XANH.
+KHÔNG ĐƯỢC:
+- Không kể chuyện cười, không làm thơ, không đóng vai bác sĩ tâm lý.
+- Luôn giữ thái độ Khách quan, Khoa học và Chính xác.
 """
 
 model = genai.GenerativeModel(
@@ -59,96 +48,89 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction
 )
 
-# --- 3. CSS THÔNG MINH (Responsive) ---
+# --- 3. GIAO DIỆN (MOBILE SAFE) ---
 st.markdown("""
 <style>
-    /* Nền tối */
     .stApp {background-color: #131314; color: #E3E3E3;}
     header, footer, #MainMenu {visibility: hidden;}
     
-    /* Thanh chat */
-    .stChatInputContainer {
-        padding-bottom: 20px; padding-top: 10px;
-        background-color: #131314; z-index: 1000;
-    }
+    /* Ô chat */
     .stChatInputContainer textarea {
         background-color: #1E1F20; color: white; 
         border-radius: 25px; border: 1px solid #444746;
     }
 
-    /* ĐỊNH VỊ NÚT UPLOAD (+) THEO MÀN HÌNH */
-    
-    /* Máy tính (>600px): Nằm góc dưới */
-    @media (min-width: 600px) {
+    /* Ẩn nút ghim trên điện thoại để tránh lỗi, chỉ hiện trên PC */
+    @media (max-width: 768px) {
+        [data-testid="stPopover"] { display: none; }
+    }
+    @media (min-width: 769px) {
         [data-testid="stPopover"] {
             position: fixed; bottom: 80px; left: 20px; z-index: 9999;
         }
-    }
-
-    /* Điện thoại (<600px): Bay lên góc trên */
-    @media (max-width: 600px) {
-        [data-testid="stPopover"] {
-            position: fixed; top: 60px; right: 15px; z-index: 9999;
+        [data-testid="stPopover"] button {
+            border-radius: 50%; width: 50px; height: 50px; 
+            border: 1px solid #4CAF50; background-color: #1E1F20; color: #4CAF50;
+            font-size: 24px; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
         }
     }
-
-    /* Giao diện nút */
-    [data-testid="stPopover"] button {
-        border-radius: 50%; width: 50px; height: 50px; 
-        border: 1px solid #4CAF50; background-color: #1E1F20; color: #4CAF50;
-        font-size: 24px; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
-    }
-    [data-testid="stPopover"] button:hover {
-        background-color: #2E7D32; color: white; border-color: #2E7D32;
-    }
-
+    
+    /* Bảng số liệu */
     table {width: 100%; border-collapse: collapse; color: #E3E3E3;}
     th {background-color: #2E7D32; color: white;}
     td {border-bottom: 1px solid #444;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. KHỞI TẠO LỜI CHÀO CHUẨN KỊCH BẢN ---
+# --- 4. KHỞI TẠO ---
 if "messages" not in st.session_state:
-    # [cite: 60-65]
-    welcome_msg = """Xin chào! Mình là **GreenHome** 🌱 - trợ lý năng lượng xanh của bạn!
-    
-Hãy gửi cho mình ảnh hóa đơn tiền điện 📸 hoặc nhập số điện tiêu thụ, mình sẽ giúp bạn:
+    # Lời chào chuyên nghiệp, định hướng người dùng ngay lập tức
+    welcome_msg = """👋 Chào bạn. Tôi là **GreenHome** - AI Phân tích Năng lượng.
 
-* 📊 **Tính lượng CO2 phát thải**
-* 💰 **Ước tính chi phí & Tiết kiệm**
-* 🌍 **Đưa ra lời khuyên cụ thể**
+Tôi chỉ tập trung giải quyết các vấn đề sau:
+1. 📊 **Phân tích hóa đơn điện** (Tính CO2, đánh giá mức tiêu thụ).
+2. 💡 **Tư vấn giải pháp kỹ thuật** để giảm lãng phí điện.
 
-Sẵn sàng chưa nào? 😊"""
-    
-    st.session_state.messages = [
-        {"role": "model", "content": welcome_msg}
-    ]
+Vui lòng **Gửi ảnh hóa đơn** hoặc **Nhập số liệu (kWh/VNĐ)** để bắt đầu."""
+    st.session_state.messages = [{"role": "model", "content": welcome_msg}]
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
-# --- 5. GIAO DIỆN CHÍNH ---
-st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome</h3>", unsafe_allow_html=True)
+# --- 5. LOGIC INPUT (Hybrid: Sidebar cho Mobile / Nút Ghim cho PC) ---
+# Cách này đảm bảo không bao giờ bị lỗi giao diện
+uploaded_file = None
+
+# A. Mobile: Dùng Sidebar (Menu trái)
+with st.sidebar:
+    st.markdown("### 📱 Tải ảnh (Mobile)")
+    file_mobile = st.file_uploader("Chọn ảnh", type=["jpg","png"], key=f"mob_{st.session_state.uploader_key}")
+    if file_mobile: uploaded_file = file_mobile
+    
+    st.divider()
+    if st.button("Xóa lịch sử chat 🗑️"):
+        st.session_state.messages = []
+        st.rerun()
+
+# B. PC: Dùng Nút Ghim (Floating Button)
+# CSS đã ẩn nút này trên điện thoại nên không lo bị che
+with st.popover("➕", use_container_width=False):
+    st.markdown("### 💻 Tải ảnh (PC)")
+    file_pc = st.file_uploader("Chọn ảnh", type=["jpg","png"], key=f"pc_{st.session_state.uploader_key}")
+    if file_pc: uploaded_file = file_pc
+
+if uploaded_file:
+    st.toast(f"Đã nhận dữ liệu: {uploaded_file.name}", icon="✅")
+
+# --- 6. GIAO DIỆN CHÍNH ---
+st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome Expert</h3>", unsafe_allow_html=True)
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. NÚT UPLOAD (THÔNG MINH) ---
-with st.popover("➕", use_container_width=False):
-    st.markdown("### 📸 Gửi ảnh hóa đơn")
-    uploaded_file = st.file_uploader(
-        "", type=["jpg", "png"], 
-        key=f"uploader_{st.session_state.uploader_key}",
-        label_visibility="collapsed"
-    )
-    if uploaded_file:
-        st.success(f"Đã chọn: {uploaded_file.name}")
-        st.info("👇 Bấm gửi bên dưới để AI phân tích")
-
-# --- 7. THANH CHAT ---
-if prompt := st.chat_input("Nhập số tiền, số điện hoặc tâm sự với GreenHome..."):
+# --- 7. XỬ LÝ CHAT ---
+if prompt := st.chat_input("Nhập số liệu điện năng tại đây..."):
     # User
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -160,20 +142,14 @@ if prompt := st.chat_input("Nhập số tiền, số điện hoặc tâm sự v�
         msg_box = st.empty()
         full_text = ""
         try:
-            history_gemini = []
-            for msg in st.session_state.messages[:-1]:
-                role = "user" if msg["role"] == "user" else "model"
-                history_gemini.append({"role": role, "parts": [msg["content"]]})
-            
-            chat = model.start_chat(history=history_gemini)
+            chat = model.start_chat(history=[]) # Không dùng lịch sử dài để tránh lan man, tập trung vào hiện tại
             
             if uploaded_file:
-                # Prompt xử lý ảnh
-                sys_msg = prompt + "\n\n(Hệ thống: Phân tích ảnh này. Nếu là hóa đơn, trích xuất số liệu, tính CO2. Nếu không, lái chuyện hài hước về tiết kiệm điện)"
+                # Prompt ÉP BUỘC phân tích chuyên sâu
+                sys_msg = prompt + "\n\n[YÊU CẦU HỆ THỐNG]: Đây là dữ liệu đầu vào. Hãy phân tích kỹ thuật: Trích xuất số liệu -> Tính CO2 (0.72) -> So sánh chuẩn -> Giải pháp. Tuyệt đối không nói chuyện phiếm."
                 response = chat.send_message([sys_msg, Image.open(uploaded_file)], stream=True)
                 st.session_state.uploader_key += 1
             else:
-                # Prompt xử lý text
                 response = chat.send_message(prompt, stream=True)
             
             for chunk in response:
