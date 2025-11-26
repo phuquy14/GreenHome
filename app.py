@@ -19,7 +19,7 @@ st.set_page_config(
     page_title="GreenHome Expert",
     page_icon="🌱",
     layout="centered",
-    initial_sidebar_state="expanded" # LUÔN MỞ THANH BÊN (Theo yêu cầu của bạn)
+    initial_sidebar_state="expanded" # LỆNH ÉP MỞ SIDEBAR
 )
 
 # --- 2. HỆ THỐNG DỮ LIỆU ---
@@ -42,45 +42,32 @@ def save_all_sessions(username, sessions_data):
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(sessions_data, f, ensure_ascii=False, indent=4)
 
-# --- 3. HÀM TẠO "TRÍ NHỚ DÀI HẠN" (QUAN TRỌNG NHẤT) ---
+# --- 3. HÀM TẠO "TRÍ NHỚ DÀI HẠN" ---
 def get_long_term_memory(username, sessions):
-    """
-    Hàm này sẽ quét qua các cuộc trò chuyện cũ để tóm tắt thông tin,
-    giúp AI nhớ được bối cảnh dù đang ở phiên chat mới.
-    """
     memory_text = ""
-    # Lấy 3 phiên chat gần nhất (để không bị quá tải token)
     recent_session_ids = list(sessions.keys())[-3:] 
-    
     if recent_session_ids:
-        memory_text += f"\n[KÝ ỨC VỀ NGƯỜI DÙNG {username} TỪ CÁC PHIÊN TRƯỚC]:\n"
+        memory_text += f"\n[KÝ ỨC VỀ USER {username}]:\n"
         for sess_id in recent_session_ids:
             sess = sessions[sess_id]
             date = sess['created_at']
-            # Lấy các tin nhắn của User và Model (bỏ qua tin hệ thống)
             msgs = [m for m in sess['messages'] if m['role'] in ['user', 'model']]
             if msgs:
-                # Chỉ lấy tóm tắt 4 tin nhắn cuối của mỗi phiên để tiết kiệm bộ nhớ
                 summary = " | ".join([f"{m['role']}: {m['content'][:100]}..." for m in msgs[-4:]])
-                memory_text += f"- Ngày {date}: {summary}\n"
-    
+                memory_text += f"- {date}: {summary}\n"
     return memory_text
 
-# --- 4. CẤU HÌNH AI (DYNAMIC PROMPT) ---
-# Chúng ta sẽ khởi tạo Model SAU KHI người dùng đăng nhập để nạp ký ức vào
+# --- 4. CẤU HÌNH AI ---
 def get_model(memory_context=""):
     base_instruction = """
     VAI TRÒ: GreenHome 🌱 - Chuyên gia Năng lượng.
-    
     QUY TẮC:
     1. TIỀN/SỐ: Quy đổi -> Tính CO2 (0.72) -> Lời khuyên.
     2. ẢNH: Phân tích hóa đơn -> Trích xuất -> Đánh giá.
     3. NGOÀI LỀ: Từ chối lịch sự.
-    4. TRÍ NHỚ: Hãy sử dụng thông tin trong phần [KÝ ỨC] để trả lời nếu người dùng hỏi về quá khứ.
+    4. KÝ ỨC: Dùng thông tin trong [KÝ ỨC] để trả lời nếu cần.
     """
-    
-    full_instruction = base_instruction + memory_context
-    return genai.GenerativeModel(model_name="gemini-2.0-flash", system_instruction=full_instruction)
+    return genai.GenerativeModel(model_name="gemini-2.0-flash", system_instruction=base_instruction + memory_context)
 
 # --- 5. CSS GIAO DIỆN ---
 st.markdown("""
@@ -92,16 +79,19 @@ st.markdown("""
     /* Sidebar luôn hiện rõ */
     [data-testid="stSidebar"] {background-color: #171719; border-right: 1px solid #333;}
     
+    /* Nút chọn lịch sử */
     .stButton button {
         width: 100%; text-align: left; border: 1px solid #333;
         background-color: #1E1F20; color: #E3E3E3; margin-bottom: 5px; border-radius: 8px;
     }
     .stButton button:hover {background-color: #2E2E2E; border-color: #4CAF50;}
     
+    /* Nút New Chat xanh lá */
     div[data-testid="stSidebarUserContent"] .stButton:first-child button {
         background-color: #2E7D32; color: white; border: none; text-align: center; font-weight: bold;
     }
 
+    /* Nút (+) Nổi */
     @media (min-width: 600px) { [data-testid="stPopover"] { position: fixed; bottom: 80px; left: 20px; z-index: 9999; } }
     @media (max-width: 600px) { [data-testid="stPopover"] { position: fixed; top: 60px; right: 15px; z-index: 9999; } }
     
@@ -118,22 +108,30 @@ if "current_user" not in st.session_state: st.session_state.current_user = None
 if "active_session_id" not in st.session_state: st.session_state.active_session_id = None
 if "user_sessions" not in st.session_state: st.session_state.user_sessions = {}
 if "uploader_key" not in st.session_state: st.session_state.uploader_key = 0
-# Biến lưu trữ model đã được nạp ký ức
 if "gemini_model" not in st.session_state: st.session_state.gemini_model = None 
 
-# --- 7. HÀM TẠO MỚI ---
+# --- 7. HÀM TẠO MỚI (ĐÃ SỬA LỜI CHÀO CHUẨN) ---
 def create_new_session():
     new_id = str(uuid.uuid4())
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # [cite_start]LỜI CHÀO CHUẨN ĐẸP [cite: 58-65]
+    welcome_content = """👋 Chào bạn! Mình là **GreenHome** 🌱.
+
+Hãy gửi **Ảnh hóa đơn** 📸 hoặc **Số tiền điện**, mình sẽ giúp bạn:
+* 📊 **Tính lượng CO2**
+* 💰 **Ước tính chi phí**
+* 🌍 **Đưa ra lời khuyên**"""
+    
     st.session_state.user_sessions[new_id] = {
         "title": "Cuộc trò chuyện mới...", 
         "created_at": timestamp,
-        "messages": [{"role": "model", "content": "👋 Chào bạn! Mình đã nhớ lại các đoạn chat cũ. Gửi số liệu mới để mình tính nhé!"}]
+        "messages": [{"role": "model", "content": welcome_content}]
     }
     st.session_state.active_session_id = new_id
     save_all_sessions(st.session_state.current_user, st.session_state.user_sessions)
     
-    # KHI TẠO MỚI -> NẠP LẠI KÝ ỨC (RELOAD MEMORY)
+    # Nạp ký ức
     memory_context = get_long_term_memory(st.session_state.current_user, st.session_state.user_sessions)
     st.session_state.gemini_model = get_model(memory_context)
 
@@ -141,6 +139,7 @@ def handle_response(user_input, image=None):
     session_id = st.session_state.active_session_id
     current_chat = st.session_state.user_sessions[session_id]
     
+    # Tự đặt tiêu đề
     if len(current_chat["messages"]) <= 1:
         current_chat["title"] = (user_input[:25] + "...") if len(user_input) > 25 else user_input
 
@@ -153,11 +152,7 @@ def handle_response(user_input, image=None):
         msg_box = st.empty()
         full_text = ""
         try:
-            # Lấy model đã có ký ức từ session_state
             model_instance = st.session_state.gemini_model
-            
-            # Chỉ gửi lịch sử CỦA PHIÊN HIỆN TẠI cho chat session
-            # (Ký ức cũ đã nằm trong system_instruction rồi)
             history_gemini = []
             for msg in current_chat["messages"][:-1]:
                 role = "user" if msg["role"] == "user" else "model"
@@ -182,7 +177,7 @@ def handle_response(user_input, image=None):
 
 # --- 8. GIAO DIỆN CHÍNH ---
 if st.session_state.current_user is None:
-    # LOGIN SCREEN
+    # LOGIN
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("<h1 style='text-align: center; color: #81C995;'>🌱 GreenHome Login</h1>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -193,19 +188,24 @@ if st.session_state.current_user is None:
                 user = username_input.strip()
                 st.session_state.current_user = user
                 st.session_state.user_sessions = load_all_sessions(user)
-                create_new_session() # Tạo mới và nạp ký ức
+                create_new_session()
                 st.rerun()
 else:
-    # SIDEBAR (LUÔN MỞ)
+    # MAIN APP
+    
+    # --- THANH BÊN (SIDEBAR) CHỨA LỊCH SỬ ---
     with st.sidebar:
         st.write(f"👤 **{st.session_state.current_user}**")
+        
+        # Nút tạo mới (Xanh lá)
         if st.button("➕ Cuộc trò chuyện mới"):
             create_new_session()
             st.rerun()
         
-        st.caption("Lịch sử (Bấm để xem lại)")
+        st.caption("Gần đây")
         session_ids = list(st.session_state.user_sessions.keys())[::-1]
         
+        # Danh sách lịch sử
         for sess_id in session_ids:
             sess_data = st.session_state.user_sessions[sess_id]
             title = sess_data.get("title", "No title")
@@ -213,7 +213,6 @@ else:
             
             if st.button(label, key=sess_id):
                 st.session_state.active_session_id = sess_id
-                # Khi xem lại chat cũ, không cần nạp lại model, chỉ cần hiện tin nhắn
                 st.rerun()
         
         st.divider()
@@ -221,9 +220,10 @@ else:
             st.session_state.current_user = None
             st.rerun()
 
-    # MAIN CHAT
+    # HEADER
     st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome Expert</h3>", unsafe_allow_html=True)
     
+    # CHAT AREA
     if st.session_state.active_session_id:
         current_messages = st.session_state.user_sessions[st.session_state.active_session_id]["messages"]
         for message in current_messages:
