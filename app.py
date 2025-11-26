@@ -162,7 +162,7 @@ with st.popover("➕", use_container_width=False):
             handle_response("Hãy phân tích hóa đơn này giúp tôi.", Image.open(uploaded_file))
 
 # --- 8. THANH CHAT (HỖ TRỢ HỎI TIẾP) ---
-if prompt := st.chat_input("Nhập số tiền (vd: 500k) hoặc câu hỏi..."):
+if prompt := st.chat_input("Nhập số tiền, số điện (vd: 500k, 200kWh) hoặc câu hỏi..."):
     # Nếu đang treo ảnh trong nút (+) mà lại gõ phím -> Gửi cả ảnh và chữ
     if uploaded_file:
         handle_response(prompt, Image.open(uploaded_file))
