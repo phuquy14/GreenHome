@@ -18,21 +18,27 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. BỘ NÃO CHUYÊN GIA (STRICT MODE) ---
+# --- 2. BỘ NÃO CHUYÊN GIA (ĐÃ SỬA LỖI HIỂU SỐ TIỀN) ---
 system_instruction = """
 VAI TRÒ: Bạn là GreenHome 🌱 - Chuyên gia Kỹ thuật về Năng lượng & Net Zero.
-GIỚI HẠN: CHỈ trả lời về: Điện năng, Hóa đơn, Thiết bị điện, CO2, Môi trường.
+NHIỆM VỤ: Chỉ tập trung phân tích điện năng, CO2 và đưa ra giải pháp tiết kiệm.
 
-QUY TẮC XỬ LÝ:
-1. ✅ DỮ LIỆU ĐIỆN (Ảnh/Số liệu):
-   - Phân tích hóa đơn, trích xuất số kWh/Tiền.
-   - Tính CO2 (0.72 kg/kWh).
-   - So sánh mức tiêu thụ và đưa ra giải pháp kỹ thuật.
+QUY TẮC XỬ LÝ QUAN TRỌNG (STRICT MODE):
 
-2. 🚫 CÂU HỎI NGOÀI LỀ (Tình cảm, Toán, Văn...):
-   - TỪ CHỐI LỊCH SỰ: "Xin lỗi, tôi là trợ lý năng lượng. Vui lòng nhập số liệu điện năng để tôi hỗ trợ."
+1. ✅ KHI NGƯỜI DÙNG NHẬP SỐ HOẶC TIỀN (VD: "500k", "1 triệu", "300", "200 số"):
+   - [TỰ ĐỘNG HIỂU]: Đây là dữ liệu điện năng.
+   - [XỬ LÝ]: 
+     + Nếu là Tiền (VNĐ): Hãy chia cho 2.500đ để ước tính ra số kWh.
+     + Nếu là Số (kWh): Dùng trực tiếp.
+   - [PHÂN TÍCH]: Tính CO2 (0.72 kg/kWh) -> So sánh mức tiêu thụ -> Đưa ra giải pháp.
+   
+2. ✅ KHI NHẬN ẢNH HÓA ĐƠN:
+   - Trích xuất số liệu chính xác -> Tính CO2 -> Đánh giá & Khuyên.
 
-KHÔNG ĐƯỢC: Kể chuyện cười, làm thơ, tư vấn tâm lý.
+3. 🚫 KHI GẶP CÂU HỎI KHÔNG LIÊN QUAN (Tình cảm, Thơ ca, Code, Chính trị...):
+   - TỪ CHỐI LỊCH SỰ: "Xin lỗi, tôi chỉ hỗ trợ tính toán điện năng và giải pháp tiết kiệm điện. Vui lòng nhập số liệu để tôi phân tích."
+
+KHÔNG ĐƯỢC: Kể chuyện cười, tán gẫu, làm thơ. Hãy tập trung vào số liệu.
 """
 
 model = genai.GenerativeModel(
@@ -40,7 +46,7 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction
 )
 
-# --- 3. CSS TÙY CHỈNH GIAO DIỆN ---
+# --- 3. CSS GIAO DIỆN (NÚT BAY) ---
 st.markdown("""
 <style>
     /* Nền tối */
@@ -57,29 +63,17 @@ st.markdown("""
         border-radius: 25px; border: 1px solid #444746;
     }
 
-    /* --- CẤU HÌNH VỊ TRÍ NÚT (+) --- */
-    
-    /* MÁY TÍNH (> 600px): Nằm góc dưới bên trái */
+    /* VỊ TRÍ NÚT (+) */
+    /* Máy tính: Góc dưới trái */
     @media (min-width: 600px) {
-        [data-testid="stPopover"] {
-            position: fixed;
-            bottom: 80px; 
-            left: 20px; 
-            z-index: 9999;
-        }
+        [data-testid="stPopover"] { position: fixed; bottom: 80px; left: 20px; z-index: 9999; }
     }
-
-    /* ĐIỆN THOẠI (< 600px): Bay lên góc trên bên phải */
+    /* Điện thoại: Góc trên phải */
     @media (max-width: 600px) {
-        [data-testid="stPopover"] {
-            position: fixed;
-            top: 60px;      
-            right: 15px;    
-            z-index: 9999;
-        }
+        [data-testid="stPopover"] { position: fixed; top: 60px; right: 15px; z-index: 9999; }
     }
 
-    /* Giao diện nút đẹp */
+    /* Giao diện nút */
     [data-testid="stPopover"] button {
         border-radius: 50%; width: 50px; height: 50px; 
         border: 1px solid #4CAF50; background-color: #1E1F20; color: #4CAF50;
@@ -104,7 +98,7 @@ Tôi chỉ tập trung giải quyết:
 1. 📊 **Phân tích hóa đơn điện** (Tính CO2, đánh giá mức tiêu thụ).
 2. 💡 **Tư vấn giải pháp kỹ thuật** giảm lãng phí điện.
 
-Vui lòng **Gửi ảnh hóa đơn** (Nút +) hoặc **Nhập số liệu** để bắt đầu."""
+Vui lòng **Gửi ảnh hóa đơn** (Nút +) hoặc **Nhập số tiền (VD: 500k)** để bắt đầu."""
     
     st.session_state.messages = [{"role": "model", "content": welcome_msg}]
 
@@ -118,7 +112,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# --- 6. NÚT UPLOAD (NỔI) ---
+# --- 6. NÚT UPLOAD ---
 with st.popover("➕", use_container_width=False):
     st.markdown("### 📸 Gửi ảnh hóa đơn")
     uploaded_file = st.file_uploader(
@@ -131,7 +125,7 @@ with st.popover("➕", use_container_width=False):
         st.info("👇 Nhập câu hỏi hoặc bấm gửi bên dưới")
 
 # --- 7. THANH CHAT ---
-if prompt := st.chat_input("Nhập số liệu điện năng..."):
+if prompt := st.chat_input("Nhập số tiền (vd: 500k) hoặc số điện..."):
     # User
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
@@ -146,11 +140,12 @@ if prompt := st.chat_input("Nhập số liệu điện năng..."):
             chat = model.start_chat(history=[])
             
             if uploaded_file:
-                # Prompt ÉP BUỘC phân tích chuyên sâu
-                sys_msg = prompt + "\n\n[YÊU CẦU]: Phân tích kỹ thuật ảnh này: Trích xuất số liệu -> Tính CO2 (0.72) -> So sánh chuẩn -> Giải pháp. Không nói chuyện phiếm."
+                # Prompt cho ảnh
+                sys_msg = prompt + "\n\n[YÊU CẦU]: Phân tích kỹ thuật ảnh này: Trích xuất số liệu -> Tính CO2 (0.72) -> So sánh chuẩn -> Giải pháp."
                 response = chat.send_message([sys_msg, Image.open(uploaded_file)], stream=True)
                 st.session_state.uploader_key += 1
             else:
+                # Prompt cho văn bản (Bot tự hiểu số tiền nhờ System Instruction ở trên)
                 response = chat.send_message(prompt, stream=True)
             
             for chunk in response:
