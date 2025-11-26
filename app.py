@@ -215,7 +215,7 @@ else:
             st.session_state.current_user = None
             st.rerun()
 
-    st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome Expert</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #81C995;'>🌱 GreenHome</h3>", unsafe_allow_html=True)
     
     if st.session_state.active_session_id:
         current_messages = st.session_state.user_sessions[st.session_state.active_session_id]["messages"]
