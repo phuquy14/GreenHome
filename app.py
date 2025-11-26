@@ -15,11 +15,10 @@ st.set_page_config(
     page_title="GreenHome Expert",
     page_icon="🌱",
     layout="centered",
-    initial_sidebar_state="collapsed" # Thu gọn menu cho thoáng
+    initial_sidebar_state="collapsed"
 )
 
-# --- 2. BỘ NÃO "CHUYÊN GIA TẬP TRUNG" (STRICT MODE) ---
-[cite_start]# [cite: 32-54]
+# --- 2. BỘ NÃO CHUYÊN GIA (STRICT MODE) ---
 system_instruction = """
 VAI TRÒ: Bạn là GreenHome 🌱 - Chuyên gia Kỹ thuật về Năng lượng & Net Zero.
 GIỚI HẠN: CHỈ trả lời về: Điện năng, Hóa đơn, Thiết bị điện, CO2, Môi trường.
@@ -41,7 +40,7 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction
 )
 
-# --- 3. CSS "BIẾN HÌNH" (NÚT (+) THÔNG MINH) ---
+# --- 3. CSS TÙY CHỈNH GIAO DIỆN ---
 st.markdown("""
 <style>
     /* Nền tối */
@@ -60,7 +59,7 @@ st.markdown("""
 
     /* --- CẤU HÌNH VỊ TRÍ NÚT (+) --- */
     
-    /* 💻 MÁY TÍNH (> 600px): Nằm góc dưới bên trái */
+    /* MÁY TÍNH (> 600px): Nằm góc dưới bên trái */
     @media (min-width: 600px) {
         [data-testid="stPopover"] {
             position: fixed;
@@ -70,8 +69,7 @@ st.markdown("""
         }
     }
 
-    /* 📱 ĐIỆN THOẠI (< 600px): Bay lên góc trên bên phải */
-    /* Để tránh bị bàn phím ảo che mất khi gõ */
+    /* ĐIỆN THOẠI (< 600px): Bay lên góc trên bên phải */
     @media (max-width: 600px) {
         [data-testid="stPopover"] {
             position: fixed;
@@ -100,7 +98,6 @@ st.markdown("""
 
 # --- 4. KHỞI TẠO LỜI CHÀO ---
 if "messages" not in st.session_state:
-    [cite_start]# [cite: 58-65]
     welcome_msg = """👋 Chào bạn. Tôi là **GreenHome** - Chuyên gia Năng lượng.
 
 Tôi chỉ tập trung giải quyết:
@@ -146,7 +143,7 @@ if prompt := st.chat_input("Nhập số liệu điện năng..."):
         msg_box = st.empty()
         full_text = ""
         try:
-            chat = model.start_chat(history=[]) # Không dùng lịch sử dài để tránh lan man
+            chat = model.start_chat(history=[])
             
             if uploaded_file:
                 # Prompt ÉP BUỘC phân tích chuyên sâu
