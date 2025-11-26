@@ -18,29 +18,33 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. BỘ NÃO THÔNG MINH (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI) ---
+# --- 2. BỘ NÃO CHUYÊN GIA (ĐÃ CẬP NHẬT TÍNH NĂNG TỰ TÍNH TIỀN) ---
 system_instruction = """
 VAI TRÒ: Bạn là GreenHome 🌱 - Chuyên gia Kỹ thuật về Năng lượng & Net Zero.
+NHIỆM VỤ: Phân tích điện năng, CO2 và đưa ra giải pháp tiết kiệm.
 
 QUY TẮC XỬ LÝ (QUAN TRỌNG):
 
-1. ✅ KHI NHẬN SỐ TIỀN/SỐ ĐIỆN (VD: "500k", "300 số"):
-   - Tự quy đổi ra kWh (Giá TB ~2.500đ/kWh).
-   - Tính CO2 (0.72 kg CO2/kWh).
-   - Đưa ra 3 lời khuyên ngắn gọn ban đầu.
+1. ✅ KHI NHẬN SỐ TIỀN (VD: "500k", "1 triệu", "200.000"):
+   - [BƯỚC 1] Tự quy đổi ra kWh (Giả sử giá trung bình 2.500đ/kWh).
+   - [BƯỚC 2] Tính CO2 (Hệ số: 0.72 kg CO2/kWh).
+   - [BƯỚC 3] Đánh giá mức tiêu thụ (Thấp/TB/Cao).
+   - [BƯỚC 4] Đưa ra 3 lời khuyên tiết kiệm cụ thể ngay lập tức.
 
-2. ✅ KHI NHẬN CÂU HỎI "TƯ VẤN CỤ THỂ/CHI TIẾT HƠN":
-   - Đây là lúc người dùng cần hành động thực tế.
-   - Bạn phải liệt kê các bước thực hiện chi tiết (Step-by-step).
-   - BẮT BUỘC phải ước tính con số cụ thể: "Nếu làm việc này, bạn giảm được khoảng X tiền và Y kg CO2 mỗi tháng".
+2. ✅ KHI NHẬN ẢNH HÓA ĐƠN:
+   - Trích xuất số liệu -> Tính CO2 -> Đánh giá & Khuyên.
 
-3. ✅ KHI NHẬN ẢNH HÓA ĐƠN:
-   - Trích xuất số liệu -> Tính CO2 -> Đánh giá.
+3. 🚫 CÂU HỎI NGOÀI LỀ:
+   - Từ chối lịch sự: "Xin lỗi, tôi chỉ hỗ trợ tính toán năng lượng. Vui lòng nhập số tiền hoặc gửi hóa đơn."
 
-4. 🚫 CÂU HỎI NGOÀI LỀ:
-   - Từ chối lịch sự, lái về chủ đề điện năng.
-
-PHONG CÁCH: Thân thiện, luôn sẵn sàng giải thích sâu hơn nếu người dùng hỏi lại.
+MẪU TRẢ LỜI KHI NHẬN TIỀN:
+"💰 Với số tiền [Số tiền] (tương đương khoảng [Số kWh] kWh):
+🌍 Lượng CO2 phát thải: [Số kg] kg
+💡 Đánh giá: [Mức độ]
+👉 Lời khuyên cho bạn:
+1. ...
+2. ...
+3. ..."
 """
 
 model = genai.GenerativeModel(
@@ -48,9 +52,10 @@ model = genai.GenerativeModel(
     system_instruction=system_instruction
 )
 
-# --- 3. CSS GIAO DIỆN ---
+# --- 3. CSS GIAO DIỆN (NÚT BAY) ---
 st.markdown("""
 <style>
+    /* Nền tối */
     .stApp {background-color: #131314; color: #E3E3E3;}
     header, footer, #MainMenu {visibility: hidden;}
     
@@ -65,51 +70,55 @@ st.markdown("""
     }
 
     /* VỊ TRÍ NÚT (+) */
-    @media (min-width: 600px) { [data-testid="stPopover"] { position: fixed; bottom: 80px; left: 20px; z-index: 9999; } }
-    @media (max-width: 600px) { [data-testid="stPopover"] { position: fixed; top: 60px; right: 15px; z-index: 9999; } }
+    @media (min-width: 600px) {
+        [data-testid="stPopover"] { position: fixed; bottom: 80px; left: 20px; z-index: 9999; }
+    }
+    @media (max-width: 600px) {
+        [data-testid="stPopover"] { position: fixed; top: 60px; right: 15px; z-index: 9999; }
+    }
 
-    /* Nút (+) đẹp */
+    /* Giao diện nút */
     [data-testid="stPopover"] button {
         border-radius: 50%; width: 50px; height: 50px; 
         border: 1px solid #4CAF50; background-color: #1E1F20; color: #4CAF50;
         font-size: 24px; box-shadow: 0px 4px 10px rgba(0,0,0,0.5);
     }
+    [data-testid="stPopover"] button:hover {
+        background-color: #2E7D32; color: white; border-color: #2E7D32;
+    }
     
-    /* Nút Gửi ngay trong menu */
+    /* Nút "Gửi ngay" trong popover */
     div[data-testid="stPopoverBody"] button {
         width: 100%; border-radius: 10px; background-color: #2E7D32; color: white; border: none;
     }
+
+    /* Bảng số liệu */
+    table {width: 100%; border-collapse: collapse; color: #E3E3E3;}
+    th {background-color: #2E7D32; color: white;}
+    td {border-bottom: 1px solid #444;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. HÀM XỬ LÝ AI (CÓ LỊCH SỬ ĐỂ HỎI TIẾP) ---
+# --- 4. HÀM XỬ LÝ AI (DÙNG CHUNG) ---
 def handle_response(user_input, image=None):
-    # Thêm tin nhắn user vào lịch sử
+    # Hiển thị tin nhắn user
     st.session_state.messages.append({"role": "user", "content": user_input})
-    
     with st.chat_message("user"):
         st.markdown(user_input)
         if image: st.image(image, width=200)
 
+    # Bot trả lời
     with st.chat_message("model"):
         msg_box = st.empty()
         full_text = ""
         try:
-            # Gửi TOÀN BỘ lịch sử chat cũ để AI hiểu ngữ cảnh (để trả lời câu hỏi follow-up)
-            history_gemini = []
-            for msg in st.session_state.messages[:-1]:
-                role = "user" if msg["role"] == "user" else "model"
-                history_gemini.append({"role": role, "parts": [msg["content"]]})
-            
-            chat = model.start_chat(history=history_gemini)
+            chat = model.start_chat(history=[])
             
             if image:
-                # Nếu có ảnh, gửi ảnh kèm prompt phân tích
-                prompt = user_input + "\n\n[YÊU CẦU]: Phân tích ảnh này. Trích xuất số liệu -> Tính CO2 -> Khuyên."
+                prompt = user_input + "\n\n[YÊU CẦU]: Phân tích ảnh này theo chuẩn GreenHome. Trích xuất số liệu -> Tính CO2 -> Khuyên."
                 response = chat.send_message([prompt, image], stream=True)
-                st.session_state.uploader_key += 1
+                st.session_state.uploader_key += 1 # Reset ảnh sau khi xử lý
             else:
-                # Nếu chỉ có text (hỏi tiếp hoặc nhập số tiền)
                 response = chat.send_message(user_input, stream=True)
             
             for chunk in response:
@@ -120,20 +129,21 @@ def handle_response(user_input, image=None):
             msg_box.markdown(full_text)
             st.session_state.messages.append({"role": "model", "content": full_text})
             
-            if image: st.rerun()
+            # Nếu vừa xử lý ảnh xong thì reload để xóa ảnh khỏi giao diện
+            if image: 
+                st.rerun()
+                
         except Exception as e:
             st.error(f"Lỗi: {e}")
 
-# --- 5. KHỞI TẠO & LỜI CHÀO HƯỚNG DẪN ---
+# --- 5. KHỞI TẠO ---
 if "messages" not in st.session_state:
-    # Cập nhật lời chào hướng dẫn chi tiết cho người mới 
-    welcome_msg = """👋 Xin chào! Mình là **GreenHome** 🌱.
+    welcome_msg = """👋 Chào bạn. Tôi là **GreenHome**.
+    
+💡 Hướng dẫn người mới:
 
-💡 **Hướng dẫn người mới:**
-1. Để gửi hóa đơn: Hãy bấm vào **dấu cộng (+)** ở góc màn hình và chọn ảnh.
-2. Để tính nhanh: Nhập số tiền (VD: *500k*), số điện (VD: *200kWh*) vào ô chat bên dưới.
-
-"""
+1. Để gửi hóa đơn: Hãy bấm vào dấu cộng (+) ở góc màn hình và chọn ảnh.
+2. Để tính nhanh: Nhập số tiền (VD: 500k), số điện (VD: 200kWh) vào ô chat bên dưới."""
     st.session_state.messages = [{"role": "model", "content": welcome_msg}]
 
 if "uploader_key" not in st.session_state:
@@ -149,23 +159,22 @@ for message in st.session_state.messages:
 # --- 7. NÚT UPLOAD (CÓ NÚT GỬI NGAY) ---
 with st.popover("➕", use_container_width=False):
     st.markdown("### 📸 Gửi ảnh hóa đơn")
-    st.caption("Bấm vào bên dưới để tải ảnh lên 👇")
     uploaded_file = st.file_uploader(
         "", type=["jpg", "png"], 
         key=f"uploader_{st.session_state.uploader_key}",
         label_visibility="collapsed"
     )
     
-    # Nút bấm gửi luôn không cần gõ phím
+    # NÚT GỬI NGAY LẬP TỨC
     if uploaded_file:
         if st.button("🚀 Phân tích ngay"):
             handle_response("Hãy phân tích hóa đơn này giúp tôi.", Image.open(uploaded_file))
 
-# --- 8. THANH CHAT (HỖ TRỢ HỎI TIẾP) ---
-if prompt := st.chat_input("Nhập số tiền, số điện (vd: 500k, 200kWh) hoặc câu hỏi..."):
-    # Nếu đang treo ảnh trong nút (+) mà lại gõ phím -> Gửi cả ảnh và chữ
+# --- 8. THANH CHAT ---
+if prompt := st.chat_input("Nhập số tiền, số điện (vd: 500k, 200kWh) hoặc số điện..."):
+    # Nếu có ảnh trong popover nhưng người dùng lại gõ phím Enter
+    # Thì ưu tiên xử lý ảnh kèm text
     if uploaded_file:
         handle_response(prompt, Image.open(uploaded_file))
     else:
-        # Chat bình thường (Hỏi tiếp, nhập số tiền...)
         handle_response(prompt)
